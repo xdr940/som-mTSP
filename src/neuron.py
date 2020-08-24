@@ -1,0 +1,100 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from distance import select_closest,select_closest_gpid
+
+def generate_network(size):
+    """
+    Generate a neuron network of a given size.
+
+    Return a vector of two dimensional points in the interval [0,1].
+    """
+    return np.random.rand(size, 2)
+
+def init_neurons(size,depot):
+
+    a = np.linspace([0.5,0.5],[0.1,1.],num=int(size/3))
+    b = np.linspace([0.1,1.],[0.9,1.],num=int(size/3))
+    c = np.linspace([0.9,1.],[0.5,0.5],num=int(size/3))
+    u = np.concatenate([a,b,c],axis=0).copy()
+    center = np.array([0.5,0.5])
+    u-=center
+    center-=center
+    center = np.expand_dims(center,axis=0)
+    u=np.concatenate([center,u],axis=0)
+
+    r = np.rot90(u,1).transpose([1,0]).copy()
+
+
+    l = (-r).copy()
+    d = (-u).copy()
+
+    l +=depot
+    d += depot
+    u += depot
+    r += depot
+
+
+
+    return [u,r,d,l]
+
+def get_neighborhood(center, radix, domain):
+    '''
+
+    :param center: winner idx
+    :param radix: 周围几个神经元
+    :param domain: 总神经元个数
+    :return:
+    '''
+    """Get the range gaussian of given radix around a center index."""
+
+    # Impose an upper bound on the radix to prevent NaN and blocks
+    if radix < 1:
+        radix = 1
+
+    # Compute the circular network distance to the center
+    deltas = np.absolute(center - np.arange(domain))
+    distances = np.minimum(deltas, domain - deltas)
+
+    # Compute Gaussian distribution around the given center
+    return np.exp(-(distances*distances) / (2*(radix*radix)))
+
+def get_route(cities, neurons):
+    """Return the route computed by a network."""
+    cities['winner'] = cities[['x', 'y']].apply(
+        lambda c: select_closest(neurons, c),
+        axis=1, raw=True)
+
+    return cities.sort_values('winner').index
+
+def reodered(cities_nm):
+    ret = cities_nm.sort_values(['gid','pid'])
+    print('ok')
+    return  ret
+def rebuild_cities(cities, neuron_chains):
+    '''
+    rebuild cities_nm
+    :param cities:
+    :param neuron_chains:
+    :return:
+    '''
+    """Return the route computed by a network."""
+
+    routes=[]
+    gpids = cities[['x', 'y']].apply(
+        lambda c: select_closest_gpid(neuron_chains, c),
+        axis=1, raw=True).to_numpy()
+    cities['gid'] = gpids[:,0]
+    cities['pid'] = gpids[:,1]
+
+    sorted_df = cities.sort_values(['gid', 'pid'],ascending=[True,True])
+
+    return sorted_df
+
+def get_routes(cities_od):
+    routes=[]
+    for gid in range(cities_od['gid'].max()):
+        routes.append(np.array(cities_od.query('gid==0').index))
+
+
+    return routes
+
