@@ -8,8 +8,8 @@ class OPT:
         self.parser.add_argument('--wk_root', type=str, default='/home/roit/aws/aprojects/M2CT2020/proj')
         self.parser.add_argument('--data_dir',default='./data')
         self.parser.add_argument('--iteration',default=5000)
-        self.parser.add_argument('--_neuro_plot_freq',default=10000)
-        self.parser.add_argument('--evaluate_freq',default=1)
+        self.parser.add_argument('--neuro_plot_freq',default=10000)
+        self.parser.add_argument('--evaluate_freq',default=100)
 
         self.parser.add_argument('--traj_out',default=True)
         self.parser.add_argument('--out_dir',default='./out_dir')
@@ -20,10 +20,11 @@ class OPT:
         self.parser.add_argument('--data_out',default='./data_out.csv')
 
         #mTSP args
-        self.parser.add_argument('--depot_idx',default=0)
+        self.parser.add_argument('--depot_idxs',default=[0,1,2,3])
         self.parser.add_argument('--init_scale',default=0.03,
                                  help="初始化为一个N边形状")
-        self.parser.add_argument('--m',default=4)
+        self.parser.add_argument('--num_depots',default=4)
+        self.parser.add_argument('--gid',default=[0,1,2,3])
 
 
 

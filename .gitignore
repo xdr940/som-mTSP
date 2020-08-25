@@ -2,4 +2,6 @@
 __pycache__\
 .idea
 src/__pycache__
-
+src/.idea
+src/our_dir/*.csv
+*.csv

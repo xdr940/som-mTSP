@@ -70,30 +70,41 @@ def reodered(cities_nm):
     ret = cities_nm.sort_values(['gid','pid'])
     print('ok')
     return  ret
-def rebuild_cities(cities, neuron_chains):
+def rebuild_cities(cities_nm, neuron_chains,num_depots):
+
     '''
     rebuild cities_nm
     :param cities:
     :param neuron_chains:
     :return:
     '''
-    """Return the route computed by a network."""
 
-    routes=[]
-    gpids = cities[['x', 'y']].apply(
+    cities_od = cities_nm.copy()
+    depots = cities_nm.head(num_depots)[['x','y']]
+    gpids = -np.ones([len(cities_nm),2])
+    gpids[num_depots:] = cities_od.iloc[num_depots:][['x', 'y']].apply(
         lambda c: select_closest_gpid(neuron_chains, c),
         axis=1, raw=True).to_numpy()
-    cities['gid'] = gpids[:,0]
-    cities['pid'] = gpids[:,1]
+    depots_nn=[]
+    idx = 0
+    for chain,depot in zip(neuron_chains,depots.to_numpy()):
+        gpids[:num_depots,0][idx] = idx
+        gpids[:num_depots,1][idx] = select_closest(chain,depot)
 
-    sorted_df = cities.sort_values(['gid', 'pid'],ascending=[True,True])
+        idx+=1
 
-    return sorted_df
+
+    cities_od['gid'] = gpids[:,0]
+    cities_od['pid'] = gpids[:,1]
+
+    cities_od = cities_od.sort_values(['gid', 'pid'],ascending=[True,True])
+
+    return cities_od
 
 def get_routes(cities_od):
     routes=[]
-    for gid in range(cities_od['gid'].max()):
-        routes.append(np.array(cities_od.query('gid==0').index))
+    for gid in range(int(cities_od['gid'].max())+1):
+        routes.append(np.array(cities_od.query('gid=='+str(gid)).index))
 
 
     return routes

@@ -250,3 +250,38 @@ def plt_mtsp(args):
     # plt.ylim([35, 37])
 
     plt.show()
+
+def plt_routes(dir):
+    plt.figure()
+    files = Path(dir).files('*.csv')
+    files.sort()
+    path = files[-1]
+    df = pd.read_csv(path)
+
+    x = np.array(df['x'])
+    y = np.array(df['y'])
+
+
+    # 点标号
+    for index, row in df.iterrows():
+        plt.text(row['x'], row['y'], int(row['city']), fontsize=10)
+
+    print(df['city'].to_numpy())
+
+    # 绘点
+    plt.scatter(x, y, c='blue')
+    start = df.query('city==0')
+
+    plt.scatter(float(start['x']), float(start['y']), c='red')
+
+    groups = df['gid'].max()
+    colors=['r','g','b','k']
+    for gid in range(int(groups)+1):
+        x = df.query('gid=='+str(gid))['x'].to_numpy()
+        y = df.query('gid=='+str(gid))['y'].to_numpy()
+    # 画路径
+        plt.plot(x, y, colors[gid])
+        plt.plot([x[0], x[-1]], [y[0], y[-1]], colors[gid])
+    plt.title(path.stem)
+
+    plt.show()
