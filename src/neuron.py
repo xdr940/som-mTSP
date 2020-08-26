@@ -58,18 +58,8 @@ def get_neighborhood(center, radix, domain):
     # Compute Gaussian distribution around the given center
     return np.exp(-(distances*distances) / (2*(radix*radix)))
 
-def get_route(cities, neurons):
-    """Return the route computed by a network."""
-    cities['winner'] = cities[['x', 'y']].apply(
-        lambda c: select_closest(neurons, c),
-        axis=1, raw=True)
 
-    return cities.sort_values('winner').index
 
-def reodered(cities_nm):
-    ret = cities_nm.sort_values(['gid','pid'])
-    print('ok')
-    return  ret
 def rebuild_cities(cities_nm, neuron_chains,num_depots):
 
     '''
@@ -85,7 +75,6 @@ def rebuild_cities(cities_nm, neuron_chains,num_depots):
     gpids[num_depots:] = cities_od.iloc[num_depots:][['x', 'y']].apply(
         lambda c: select_closest_gpid(neuron_chains, c),
         axis=1, raw=True).to_numpy()
-    depots_nn=[]
     idx = 0
     for chain,depot in zip(neuron_chains,depots.to_numpy()):
         gpids[:num_depots,0][idx] = idx
@@ -108,4 +97,6 @@ def get_routes(cities_od):
 
 
     return routes
-
+def save_neuron_chains(neuron_chains,path):
+    neuron_chains_np = np.array(neuron_chains)
+    np.save(path,neuron_chains_np)

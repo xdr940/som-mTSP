@@ -1,12 +1,14 @@
 import numpy as np
-import pandas as pd
 
+aa=np.array([1,2,3,4])
+bb=np.array([2,3,4,5])
 
-def add(a,b):
-    return a+b
-df = pd.read_csv('data/data1.csv')
-
-etst = df.apply(lambda row: add(row['x'],row['y']),axis=1)
+ab = [aa,bb]
 
 print('ok')
+for idx,itm in enumerate(ab):
+    ab[idx] = list(itm)
+
+print('ok')
+
 

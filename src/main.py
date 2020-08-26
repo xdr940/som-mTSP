@@ -1,44 +1,40 @@
-from sys import argv
-
 import numpy as np
 #iner
-from neuron import generate_network, get_neighborhood, rebuild_cities,init_neurons,get_routes
-from distance import select_closest_gpid, euclidean_distance, route_distance_p,route_distance,depot_with_chains,routes_distances
-from plot import plot_neuron_chains, plot_route,plt_traj_p,plot_loss,plt_traj_np,plt_mtsp,plt_routes
+from neuron import save_neuron_chains, get_neighborhood, rebuild_cities,init_neurons,get_routes
+from distance import select_closest_gpid, routes_distances
+from plot import plot_neuron_chains,plot_loss,plot_routes
 from opts import OPT
-from dataloader import dataloader
 import pandas as pd
 from path import Path
 from tqdm import tqdm
 from utils import normalize
 
+import json
 import matplotlib.pyplot as plt
 
 
 def run(args):
 
 
-    df = pd.read_csv(Path(args.data_dir)/'data1.csv')
-    result= som(df, args)
-    #best_route, best_id, min_loss, losses, losses_decay
-    #df_ordered = df.reindex(result['best_routes'])
-    #distance = route_distance_p(args.data_out)
+   pass
 
-    if args.prt_route:
-        print("--> best route and id".format(result['best_routes']),result['best_id'])
-        print('--> Route found of length {}'.format(result['min_loss']))
+   # if args.prt_route:
+   ##     print("--> best route and id".format(result['best_routes']),result['best_id'])
+    #    print('--> Route found of length {}'.format(result['min_loss']))
 
     #if args.data_out:
     #    df_ordered.to_csv(args.data_out,index=False)
 
-    return result['losses'],result['losses_decay']
+    #return result['losses'],result['losses_decay']
 
 
 
-def som(cities, args):
+def SOM(args):
     """Solve the TSP using a Self-Organizing Map."""
 
     # Obtain the normalized set of cities (w/ coord in [0,1])
+    cities = pd.read_csv(Path(args.data_dir) / 'data1.csv')
+
     iteration = args.iteration
     learning_rate = args.learning_rate
     decay = args.decay
@@ -49,6 +45,9 @@ def som(cities, args):
     cities_nm = cities.copy()
 
     cities_nm[['x', 'y']] = normalize(cities_nm[['x', 'y']])
+    cities_nm.to_csv(out_dir/'cities_nm.csv')
+    cities.to_csv(out_dir/'cities.csv')
+
 
     depot = cities_nm.query('city==0')[['x','y']].to_numpy()
     # The population size is 8 times the number of cities
@@ -59,10 +58,14 @@ def som(cities, args):
     neuron_chains =init_neurons(size=n,depot=depot)
     print('--> Network of {} neurons created. Starting the iterations:'.format(n))
     best_routes=np.array([0])
+
+    #save
+    losses_sum_log={}#每个循环losses_sum值
+    min_losses_sum_log = {}##保存最小值的路径losses
+    min_losses_log={}#存储最好情况下四条路径的距离值
+    min_routes_log={}
     best_id=0
-    min_loss=0
-    losses_log={}
-    losses_decay = {}
+    min_losses_sum=0
 
     for i in tqdm(range(iteration)):
         if not i % args.neuro_plot_freq:
@@ -73,7 +76,6 @@ def som(cities, args):
             continue
         city = sample[['x', 'y']].values#随机抽样 random  sampling
         group_idx,winner_idx = select_closest_gpid(neuron_chains, city)
-        #winner_idx_depot = depot_with_chains(neuron_chains,depot)
 
         # Generate a filter that applies changes to the winner's gaussian
         gaussian = get_neighborhood(center=winner_idx, radix=n//10, domain=neuron_chains[0].shape[0])
@@ -83,29 +85,25 @@ def som(cities, args):
         learning_rate = learning_rate * decay
         n = n * decay
 
-        # Check for plotting interval
-        #if not i % args._neuro_plot_freq:
-            #plot_neuron_chains(cities_nm, neuron_chains)
 
         if i % args.evaluate_freq==0:
-            #route = get_route(cities_cp, neuron_chains[group_idx])
             cities_od = rebuild_cities(cities_nm,neuron_chains,args.num_depots)
-            routes = get_routes(cities_od)
             cities_od[['x','y']] =cities.reindex(cities_od['city'])[['x','y']]
             losses = routes_distances(cities_od)
-            total_loss = sum(losses)
+            losses_sum = sum(losses)
+            losses_sum_log[i] = losses_sum
 
-            if min_loss == 0 or min_loss > total_loss:
-                min_loss = total_loss
-                best_routes = routes
+            if min_losses_sum == 0 or min_losses_sum > losses_sum:
+                min_losses_sum = losses_sum
                 best_id = i
-                losses_decay[i] = total_loss
+                routes = get_routes(cities_od)
+                routes = [list(item.astype(np.float64)) for item in routes]
+                min_routes_log[i] = routes
+
+                min_losses_sum_log[i] = losses_sum
+                min_losses_log[i] = losses
                 cities_od.to_csv(out_dir/'data_out_{:04d}.csv'.format(i))
-                if args.route_decay_log:
-                    # 把渐渐缩小的最好路径存起来
-                    # TODO
-                    pass
-            losses_log[i]=total_loss
+                save_neuron_chains(neuron_chains,out_dir/"neuron_chains_{:04d}.npy".format(i))
 
     #end for
 
@@ -122,30 +120,34 @@ def som(cities, args):
 
     print('Completed {} iterations.'.format(iteration))
 
-    ret = {}
+    results = {}
+
+    results['losses_sum_log']=losses_sum_log
+    results['best_id'] = best_id
+
+    results['min_losses_sum_log']=min_losses_sum_log
+    results['min_losses_log']=min_losses_log
+    results['min_routes_log'] = min_routes_log
+    p = Path(out_dir/'results.json')
+
+    with open(p, 'w') as fp:
+        json.dump(results, fp)
+        print('ok')
 
 
-    ret['best_routes']=best_routes
-    ret['best_id']=best_id
-
-    ret['min_loss']=min_loss
-    ret['losses']=losses_log
-    ret['losses_decay']=losses_decay
 
 
-    return ret
+
+    return results
 
 
 def main():
     pass
 if __name__ == '__main__':
     args = OPT().args()
-    #losses,losses_decay = run(args)
-    #if args.plt_losses:
-    #    plot_loss(losses, losses_decay)
-
-    #plt_traj_p(args.data_out)
-    #plt_traj_np(args)
-    plt_routes(args.out_dir)
+    #SOM(args)
+    plot_loss(input_dir = args.out_dir)
+    plot_routes(input_dir = args.out_dir)
+    plot_neuron_chains(input_dir = args.out_dir)
 
 
