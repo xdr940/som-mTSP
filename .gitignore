@@ -6,4 +6,5 @@ src/.idea
 src/out_dir
 src/our_dir/*.csv
 *.csv
+*.zip
 
