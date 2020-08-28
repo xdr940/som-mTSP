@@ -27,7 +27,6 @@ def plot_neuron_chains(input_dir):
         x_ = np.expand_dims(x, axis=1)
         y_ = np.expand_dims(y, axis=1)
 
-        xy = np.concatenate([x_, y_], axis=1)
         plt.close()
         plt.figure(1)
         #绘点

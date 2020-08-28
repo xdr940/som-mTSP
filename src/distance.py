@@ -24,8 +24,7 @@ def route_distance_p(path):
     distances = euclidean_distance(points, np.roll(points, 1, axis=0))
     return np.sum(distances)
 
-def depot_with_chains(neron_chains,depot):
-    pass
+
 def select_closest_gpid(neuron_chains, origin):
     ret_gid=0
     ret_pid=0
