@@ -108,8 +108,9 @@ def SOM(args):
     results['min_losses_sum_log']=min_losses_sum_log
     results['min_losses_log']=min_losses_log
     results['min_routes_log'] = min_routes_log
-    p = Path(out_dir/'results.json')
 
+
+    p = Path(out_dir/'results.json')
     with open(p, 'w') as fp:
         json.dump(results, fp)
         print('ok')
