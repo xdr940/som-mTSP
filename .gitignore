@@ -3,7 +3,7 @@ __pycache__\
 .idea
 src/__pycache__
 src/.idea
-#src/out_dir
-#src/our_dir/*.csv
-#*.csv
+src/out_dir
+src/our_dir/*.csv
+*.csv
 
